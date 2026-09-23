@@ -843,7 +843,6 @@ public class StripePaymentPluginApi extends PluginPaymentPluginApi<StripeRespons
                                                  paymentIntentParams.put("amount", KillBillMoney.toMinorUnits(currency.toString(), amount));
                                                  paymentIntentParams.put("currency", currency.toString());
                                                  paymentIntentParams.put("capture_method", captureMethod.value);
-                                                 // TODO Do we need to switch to manual confirmation to be able to set off_session=recurring?
                                                  paymentIntentParams.put("confirm", true);
                                                  // See https://stripe.com/docs/api/payment_intents/create#create_payment_intent-return_url
                                                  final String returnUrl = PluginProperties.findPluginPropertyValue("return_url", properties);
@@ -854,6 +853,14 @@ public class StripePaymentPluginApi extends PluginPaymentPluginApi<StripeRespons
                                                  paymentIntentParams.put("confirmation_method", "automatic");
                                                  if (customerId != null) {
                                                      paymentIntentParams.put("customer", customerId);
+                                                     // WAYSCloud: background charge on a saved payment
+                                                     // method. Mark it off-session so Stripe applies the
+                                                     // stored-credential (MIT) SCA exemptions, and fail
+                                                     // fast when the issuer still requires authentication,
+                                                     // instead of parking in requires_action with no client
+                                                     // around to complete the 3DS challenge.
+                                                     paymentIntentParams.put("off_session", true);
+                                                     paymentIntentParams.put("error_on_requires_action", true);
                                                  }
                                                  paymentIntentParams.put("metadata", ImmutableMap.of("kbAccountId", kbAccountId,
                                                                                                      "kbPaymentId", kbPaymentId,
